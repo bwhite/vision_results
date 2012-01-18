@@ -77,8 +77,11 @@
 
   <body>
     <script type="text/javascript">
+
+      function selected_radio() {
+          return $('input:radio[name=group]:checked').val();
+      }
       function update_config(config) {
-          cur_config = config;
           <!-- Update titles -->
           document.title = config.title;
           $('#title').html(config.title)
@@ -93,11 +96,19 @@
           <!-- Update class description name -->
           $('#class_description_name').html(config.class_description_name)
           <!-- Update downdown -->
-          $('#class_dropdown').html('');
-          $.each(config.classes, function(key, value) {   
-              $('#class_dropdown').append($('<option>', { value : key }).text(key)); 
+          $('#classes').html('');
+          class_descriptions = {};
+          class_names = [];
+          $.each(config.classes, function(index, value) {   
+              $('#classes').append($('<input>', { id: 'radio_' + value.key, type: "radio", name: "group", value : value.key }));
+              $('#classes').append($('<span>').text('  ' + value.name + ' (' + String.fromCharCode(97 + class_names.length) + ')'));
+              $('#classes').append('<br>'); 
+              class_descriptions[value.key] = value.description;
+              class_names.push(value.key);
           });
-        dropbox_change_handler();
+        $('input:radio[name=group]').change(radio_change_handler);
+        $('#radio_' + class_names[0]).attr('checked', true);
+        radio_change_handler();
       }
 
       function update_data(data) {
@@ -134,11 +145,11 @@
       }
 
       function submit_handler(event) {
-        ajax("/result/", "put", JSON.stringify({user_id: user_id, data_id: data_id, event: $("#class_dropdown option:selected").text()}), update_data);
+        ajax("/result/", "put", JSON.stringify({user_id: user_id, data_id: data_id, event: selected_radio()}), update_data);
       }
 
-      function dropbox_change_handler(event) {
-        $('#class_description').html(cur_config.classes[$("#class_dropdown option:selected").text()].description);
+      function radio_change_handler(event) {
+        $('#class_description').html(class_descriptions[selected_radio()]);
       }
 
       function ajax(url, method, data, success, before_send, fail) {
@@ -161,7 +172,18 @@
           load_config();
           load_user();
           $('#submit').click(submit_handler);
-          $('#class_dropdown').change(dropbox_change_handler);
+          $(document).keypress(function(e) {
+              if(e.which == 13) {
+                  $('#submit').click()
+              } else if(e.which >= 97 && e.which <= 122) {
+                  var class_name = class_names[e.which - 97];
+                  if (class_name) {
+                      $('input:radio[name=group]:checked').attr('checked', false);
+                      $('#radio_' + class_name).attr('checked', true);
+                      radio_change_handler();
+                  }
+              }
+            });
         });
     </script>
 
@@ -172,23 +194,21 @@
         </div>
         <div class="row">
           <div class="span14">
-            <center> 
            <h2>Instructions</h2>
             <div id="instructions">
             </div>
+            <h2 id="image_name"></h2>
+            <div id="images"></div>
             <h2 id="classes_name"></h2>
             <div id="classes">
-              <select id="class_dropdown"></select>
+            </div>
+            <div>
+              <center>
+              <input id="submit" type="submit" class="btn primary" value="Submit (enter)">
+              </center>
             </div>
             <h2 id="class_description_name"></h2>
             <div id="class_description"></div>
-            <h2 id="image_name"></h2>
-
-            <div id="images"></div>
-            <div>
-              <input id="submit" type="submit" class="btn primary" value="Save">
-            </div>
-            </center>
           </div>
         </div>
       </div>
