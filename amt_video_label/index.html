@@ -14,7 +14,6 @@
     <!-- Le styles -->
     <link href="http://twitter.github.com/bootstrap/1.3.0/bootstrap.css" rel="stylesheet">
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="http://ashishblog.com/ash/source/jquery.cookie.js"></script>
     <style type="text/css">
       /* Override some defaults */
       html, body {
@@ -78,6 +77,14 @@
   <body>
     <script type="text/javascript">
 
+      function query_string() {
+          var results = new RegExp('\\?.*').exec(window.location.href);
+          if (!results) { 
+              return "";
+          }
+          return results[0];
+      }
+
       function selected_radio() {
           return $('input:radio[name=group]:checked').val();
       }
@@ -112,6 +119,9 @@
       }
 
       function update_data(data) {
+        if (data.submit_url) { <!-- If we are given a submit url, redirect to it and we are done. -->
+            window.location.href = data.submit_url;
+        }
         data_id = data.data_id;
         $('#images').html('');
         $.each(data.images, function(index, value) {   
@@ -122,7 +132,6 @@
       }
 
       function update_user(user) {
-          $.cookie('user_id', user.user_id, {'expires': 365});
           user_id = user.user_id;
           load_data();
       }
@@ -136,20 +145,19 @@
       }
 
       function load_user() {
-          user_id = $.cookie('user_id');
-          if (user_id) {
-              load_data();
-          } else {
-              $.getJSON("user.js", update_user);
-          }
+          $.getJSON("user.js" + query_string(), update_user);
       }
 
       function submit_handler(event) {
-        ajax("/result/", "put", JSON.stringify({user_id: user_id, data_id: data_id, event: selected_radio()}), update_data);
+          ajax("/result/", "put", JSON.stringify({user_id: user_id, data_id: data_id, event: selected_radio()}), update_data);
+      }
+
+      function reload_handler(event) {
+          load_data();
       }
 
       function radio_change_handler(event) {
-        $('#class_description').html(class_descriptions[selected_radio()]);
+          $('#class_description').html(class_descriptions[selected_radio()]);
       }
 
       function ajax(url, method, data, success, before_send, fail) {
@@ -172,6 +180,7 @@
           load_config();
           load_user();
           $('#submit').click(submit_handler);
+          $('#reload').click(reload_handler);
           $(document).keypress(function(e) {
               if(e.which == 13) {
                   $('#submit').click()
@@ -205,6 +214,7 @@
             <div>
               <center>
               <input id="submit" type="submit" class="btn primary" value="Submit (enter)">
+              <input id="reload" type="submit" class="btn secondary" value="Skip Video">
               </center>
             </div>
             <h2 id="class_description_name"></h2>
