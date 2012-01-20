@@ -3,7 +3,7 @@ import cPickle as pickle
 import os
 import math
 
-data_root = 'data/'
+data_root = '../data/'
 
 
 def prune_frame_paths(frame_paths, target_frames=10):
@@ -30,6 +30,6 @@ def main():
             for frame_path in frame_paths:
                 frame_db[event][video].append(frame_path)
 
-    with open('db.pkl', 'w') as fp:
+    with open('../db.pkl', 'w') as fp:
         pickle.dump(frame_db, fp, -1)
 main()
