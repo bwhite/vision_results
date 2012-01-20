@@ -98,7 +98,7 @@ def make_data(user_id):
     RESPONSE_DB.insert(out['data_id'], {'event': event, 'video': video,
                                         'user_id': user_id, 'start_time': time.time()})
     for frame in FRAME_DB[event][video]:
-        out['images'].append({"src": 'frames/%s.jpg' % PATH_TO_KEY[frame], "width": 150})
+        out['images'].append({"src": 'frames/%s.jpg' % PATH_TO_KEY[frame], "width": 250})
     increment_column(USERS_DB, user_id, 'tasks_viewed')
     cur_user['tasks_viewed'] += 1
     return out
