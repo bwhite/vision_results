@@ -134,7 +134,7 @@ def main():
     print('Results URL:  /%s/results.js' % SECRET)
     print('Users URL:  /%s/users.js' % SECRET)
     # Setup DB
-    if 0:
+    if 1:
         import pycassa
         pool = pycassa.ConnectionPool('amt_video_label')
         USERS_DB = pycassa.ColumnFamily(pool, 'users')
