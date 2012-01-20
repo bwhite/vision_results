@@ -30,10 +30,9 @@ def result():
     if 'user_event' not in response:
         new_response['user_event'] = request['event']
         new_response['end_time'] = time.time()
-        print('user_id[%s]' % user_id)
-        USERS_DB.insert(user_id, {'tasks_finished': USERS_DB.get(user_id, ['tasks_finished'])['tasks_finished'] + 1})
+        increment_column(USERS_DB, user_id, 'tasks_finished')
         if request['event'] == response['event']:
-            USERS_DB.insert(user_id, {'tasks_correct': USERS_DB.get(user_id, ['tasks_correct'])['tasks_correct'] + 1})
+            increment_column(USERS_DB, user_id, 'tasks_correct')
     RESPONSE_DB.insert(data_id, new_response)
     return make_data(user_id)
 
@@ -41,6 +40,9 @@ def result():
 def urlsafe_uuid():
     return base64.urlsafe_b64encode(uuid.uuid4().bytes)[:-2]
 
+
+def increment_column(db, user_id, column):
+    db.insert(user_id, {column: db.get(user_id, [column])[column] + 1})
 
 @bottle.get('/:secret/results.js')
 def admin_results(secret):
@@ -97,6 +99,7 @@ def make_data(user_id):
                                         'user_id': user_id, 'start_time': time.time()})
     for frame in FRAME_DB[event][video]:
         out['images'].append({"src": 'frames/%s.jpg' % PATH_TO_KEY[frame], "width": 150})
+    increment_column(USERS_DB, user_id, 'tasks_viewed')
     cur_user['tasks_viewed'] += 1
     return out
 
