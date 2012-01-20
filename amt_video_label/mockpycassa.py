@@ -3,8 +3,10 @@ class MockColumnFamily(object):
     def __init__(self):
         self.db = {}
 
-    def get(self, key):
-        return self.db[key]
+    def get(self, key, columns=None):
+        if columns is None:
+            return dict(self.db[key])
+        return dict((k, self.db[key][k]) for k in columns)
 
     def get_count(self, key):
         return len(self.db[key])

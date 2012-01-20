@@ -106,13 +106,17 @@
           $('#classes').html('');
           class_descriptions = {};
           class_names = [];
+          var classes_obj = $('<ul>', {class: "inputs-list"});
           $.each(config.classes, function(index, value) {   
-              $('#classes').append($('<input>', { id: 'radio_' + value.key, type: "radio", name: "group", value : value.key }));
-              $('#classes').append($('<span>').text('  ' + value.name + ' (' + String.fromCharCode(97 + class_names.length) + ')'));
-              $('#classes').append('<br>'); 
+              v0 = $('<input>', { id: 'radio_' + value.key, type: "radio", name: "group", value : value.key });
+              v1 = $('<span>').text('  ' + value.name + ' (' + String.fromCharCode(97 + class_names.length) + ')');
+              v2 = $('<li>');
+              v3 = $('<label>').append(v0, v1);
+              classes_obj.append(v2.append(v3))
               class_descriptions[value.key] = value.description;
               class_names.push(value.key);
           });
+        $('#classes').append(classes_obj);
         $('input:radio[name=group]').change(radio_change_handler);
         $('#radio_' + class_names[0]).attr('checked', true);
         radio_change_handler();
@@ -209,8 +213,7 @@
             <h2 id="image_name"></h2>
             <div id="images"></div>
             <h2 id="classes_name"></h2>
-            <div id="classes">
-            </div>
+            <div id="classes" style="padding-left: 10px"></div>
             <div>
               <center>
               <input id="submit" type="submit" class="btn primary" value="Submit (enter)">
