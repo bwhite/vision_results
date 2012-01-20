@@ -1,0 +1,13 @@
+import pycassa
+s = pycassa.system_manager.SystemManager()
+s.drop_keyspace('amt_video_label')
+s.create_keyspace('amt_video_label', strategy_options={"replication_factor": "1"})
+s.create_column_family('amt_video_label', 'users')
+s.create_column_family('amt_video_label', 'responses')
+s.alter_column('amt_video_label', 'users', 'tasks_finished', pycassa.system_manager.INT_TYPE)
+s.alter_column('amt_video_label', 'users', 'tasks_correct', pycassa.system_manager.INT_TYPE)
+s.alter_column('amt_video_label', 'users', 'tasks_viewed', pycassa.system_manager.INT_TYPE)
+s.alter_column('amt_video_label', 'users', 'start_time', pycassa.system_manager.FLOAT_TYPE)
+s.alter_column('amt_video_label', 'users', 'end_time', pycassa.system_manager.FLOAT_TYPE)
+s.alter_column('amt_video_label', 'responses', 'start_time', pycassa.system_manager.FLOAT_TYPE)
+s.alter_column('amt_video_label', 'responses', 'end_time', pycassa.system_manager.FLOAT_TYPE)

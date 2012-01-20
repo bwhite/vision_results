@@ -9,6 +9,7 @@ import cPickle as pickle
 import random
 import json
 import time
+from mockpycassa import MockColumnFamily
 
 
 @bottle.get('/')
@@ -19,17 +20,22 @@ def index():
 @bottle.put('/result/')
 def result():
     request = bottle.request.json
-    assert request['user_id'] in USERS_DB
-    response = RESPONSE_DB[request['data_id']]
-    assert response['user_id'] == request['user_id']
+    user_id = request['user_id']
+    data_id = request['data_id']
+    #assert request['user_id'] in USERS_DB
+    response = RESPONSE_DB.get(data_id)
+    assert response['user_id'] == user_id
+    new_response = {}
     # Don't double count old submissions
     if 'user_event' not in response:
-        response['user_event'] = request['event']
-        response['end_time'] = time.time()
-        USERS_DB[request['user_id']]['tasks_finished'] += 1
-        if response['user_event'] == response['event']:
-            USERS_DB[request['user_id']]['tasks_correct'] += 1
-    return make_data(request['user_id'])
+        new_response['user_event'] = request['event']
+        new_response['end_time'] = time.time()
+        print('user_id[%s]' % user_id)
+        USERS_DB.insert(user_id, {'tasks_finished': USERS_DB.get(user_id, ['tasks_finished'])['tasks_finished'] + 1})
+        if request['event'] == response['event']:
+            USERS_DB.insert(user_id, {'tasks_correct': USERS_DB.get(user_id, ['tasks_correct'])['tasks_correct'] + 1})
+    RESPONSE_DB.insert(data_id, new_response)
+    return make_data(user_id)
 
 
 def urlsafe_uuid():
@@ -38,26 +44,28 @@ def urlsafe_uuid():
 
 @bottle.get('/:secret/results.js')
 def admin_results(secret):
-    if secret == SECRET:
-        return json.dumps(RESPONSE_DB)
+    pass
+    #if secret == SECRET:
+    #    return RESPONSE_DB.json()
 
 
 @bottle.get('/:secret/users.js')
 def admin_users(secret):
-    if secret == SECRET:
-        return json.dumps(USERS_DB)
+    pass
+    #if secret == SECRET:
+    #    return json.dumps(USERS_DB)
 
 
 @bottle.get('/user.js')
 def user():
     user_id = urlsafe_uuid()
-    USERS_DB[user_id] = {'query_string': bottle.request.query_string,
-                         'remote_addr': bottle.request.remote_addr,
-                         'tasks_finished': 0,
-                         'tasks_correct': 0,
-                         'tasks_viewed': 0,
-                         'start_time': time.time()}
-    USERS_DB[user_id].update(dict(bottle.request.query))
+    USERS_DB.insert(user_id, {'query_string': bottle.request.query_string,
+                              'remote_addr': bottle.request.remote_addr,
+                              'tasks_finished': 0,
+                              'tasks_correct': 0,
+                              'tasks_viewed': 0,
+                              'start_time': time.time()})
+    USERS_DB.insert(user_id, dict(bottle.request.query))
     return {"user_id": user_id}
 
 
@@ -69,9 +77,10 @@ def data(user_id):
 def make_data(user_id):
     event = random.choice(list(FRAME_DB))
     video = random.choice(list(FRAME_DB[event]))
-    cur_user = USERS_DB[user_id]
+    cur_user = USERS_DB.get(user_id)
     if ARGS.mode != 'standalone' and cur_user['tasks_finished'] >= ARGS.num_tasks:
         cur_user['end_time'] = time.time()
+        USERS_DB.insert(user_id, {'end_time': cur_user['end_time']})
         pct_correct = cur_user['tasks_correct'] / float(cur_user['tasks_finished'])
         pct_completed = cur_user['tasks_finished'] / float(cur_user['tasks_viewed'])
         query_string = '&'.join(['%s=%s' % x for x in [('assignmentId', cur_user.get('assignmentId', 'NoId')),
@@ -84,8 +93,8 @@ def make_data(user_id):
         return {'submit_url': '%s/mturk/externalSubmit?%s' % (cur_user.get('turkSubmitTo', 'http://www.mturk.com'), query_string)}
     out = {"images": [],
            "data_id": urlsafe_uuid()}
-    RESPONSE_DB[out['data_id']] = {'event': event, 'video': video,
-                                   'user_id': user_id, 'start_time': time.time()}
+    RESPONSE_DB.insert(out['data_id'], {'event': event, 'video': video,
+                                        'user_id': user_id, 'start_time': time.time()})
     for frame in FRAME_DB[event][video]:
         out['images'].append({"src": 'frames/%s.jpg' % PATH_TO_KEY[frame], "width": 150})
     cur_user['tasks_viewed'] += 1
@@ -115,7 +124,7 @@ def main():
     parser.add_argument('--port', help='Run on this port',
                         default='8080')
     parser.add_argument('--num_tasks', help='Number of tasks per worker (unused in standalone mode)',
-                        default=500, type=int)
+                        default=100, type=int)
     parser.add_argument('--mode', type=str, help='Number of tasks per worker',
                         default='standalone', choices=['amt', 'standalone'])
     ARGS = parser.parse_args()
@@ -125,16 +134,21 @@ def main():
     print('Results URL:  /%s/results.js' % SECRET)
     print('Users URL:  /%s/users.js' % SECRET)
     # Setup DB
-    USERS_DB = {}
-    RESPONSE_DB = {}
+    if 1:
+        import pycassa
+        pool = pycassa.ConnectionPool('amt_video_label')
+        USERS_DB = pycassa.ColumnFamily(pool, 'users')
+        RESPONSE_DB = pycassa.ColumnFamily(pool, 'responses')
+    else:
+        USERS_DB = MockColumnFamily()
+        RESPONSE_DB = MockColumnFamily()
     with open('db.pkl') as fp:
-        FRAME_DB, _ = pickle.load(fp)
+        FRAME_DB = pickle.load(fp)
     frames = []
     for event in FRAME_DB:
         for video in FRAME_DB[event]:
             for frame in FRAME_DB[event][video]:
                 frames.append(frame)
-    random.shuffle(frames)
     PATH_TO_KEY = {}
     KEY_TO_PATH = {}
     for frame in frames:
