@@ -1,0 +1,26 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <script type='application/javascript'>
+    // Send the POST when the page is loaded,
+    // which will replace this whole page with the retrieved chart.
+    function loadGraph() {
+      var frm = document.getElementById('post_form');
+      if (frm) {
+       frm.submit();
+      }
+    }
+  </script>
+  </head>
+  <body onload="loadGraph()">
+    <form action='https://chart.googleapis.com/chart' method='POST' id='post_form'
+          onsubmit="this.action = 'https://chart.googleapis.com/chart?chid=' + (new Date()).getMilliseconds(); return true;">
+      <input type='hidden' name='cht' value='lc'/>
+      <input type='hidden' name='chtt' value='This is | my chart'/>
+      <input type='hidden' name='chs' value='300x200'/>
+      <input type='hidden' name='chxt' value='x'/>
+      <input type='hidden' name='chd' value='t:40,20,50,20,100'/>
+      <input type='submit'/>
+    </form>
+  </body>
+</html>

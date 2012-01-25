@@ -1,0 +1,20 @@
+Support
+- Images/Video/Objects
+- Binary classifiers
+
+Features
+- Sort by binary classifier or 1D feature
+- Select which classes to consider
+- Show histogram of # of classes for each segment of the feature
+
+Functions
+- get_thumbnail(data_id, height, width)  # Fixed size thumbnail of the media
+- get_full_display(data_id)  # Generates HTML for a full visualization of the data, shown in a lightbox or webpage
+
+- list_classes()
+- list_features()
+- list_classifiers()
+- list_projections()
+
+- get_confidence(feature_name, classifier_name, pos_class_names, neg_class_names)  # Returns iterator of {'class_name': class_label, 'conf': confidence, 'data_id': data_id}
+- get_2d_proj(feature_name, projection_name, pos_class_names, neg_class_names)  # Returns iterator of {'class_name': class_label, 'x': x point, 'y': y point, 'data_id'} (optional)
