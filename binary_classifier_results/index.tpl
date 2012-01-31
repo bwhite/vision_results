@@ -12,17 +12,10 @@ padding-top: 50px;
 
 </head><body>
 <form>
-<select id="class_name">
-    %import base64
-    %for c in classes:
-        <option value={{base64.b16encode(c)}}>{{c}}</option>
-    %end
-</select>
 
-
-<select id="feature_classifier_name">
+<select id="class_feature_classifier_name">
     %import base64
-    %for c in feature_classifiers:
+    %for c in class_feature_classifiers:
         <option value={{base64.b16encode(c)}}>{{c}}</option>
     %end
 </select>
@@ -51,7 +44,7 @@ function update_page_nums(myOptions) {
 }
 
 function update_main() {
-    var url = 'body/' + $('#class_name').val() + '/' + $('#feature_classifier_name').val() + '/' + $('#page_num').val() + '/?callback=?';
+    var url = 'body/' + $('#class_feature_classifier_name').val() + '/' + $('#page_num').val() + '/?callback=?';
     $.getJSON(url, function(data) {
         update_page_nums(data.page_nums);
         $('#main').html(data.data);
@@ -62,8 +55,7 @@ function update_main() {
         });
     });
 }
-$('#class_name').change(update_main);
-$('#feature_classifier_name').change(update_main);
+$('#class_feature_classifier_name').change(update_main);
 $('#page_num').change(update_main);
 $(update_main);
 </script>

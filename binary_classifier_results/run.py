@@ -2,26 +2,27 @@ import server
 import graphs
 import glob
 import os
-import run
-import cass_alggen as cass
-run.cass = cass
+import json
 import base64
 import imfeat
-from run import *
-
 
 CACHE = {}
-#INDEX = None
+DATA = json.load(open('data.js'))
 
 
-#def _build_index():
-#    global INDEX
-#    INDEX = {}
-#    paths = ['/mnt/nfsdrives/shared/voc07_thumbs', '/mnt/nfsdrives/data/vision_data/voc07/VOCdevkit/VOC2007/JPEGImages/']
-#    for path in paths:
-#        for fn in glob.glob('%s/*.jpg' % path):
-#            INDEX[os.path.basename(fn)] = fn
-#    print('Index Built: [%d] Files' % len(INDEX))
+def list_class_feature_classifiers():
+    return DATA.keys()
+
+
+def get_confidence(class_feature_classifier_name):
+    for data_id, data in DATA[class_feature_classifier_name].items():
+        if data['is_positive'] is None:
+            continue
+
+        yield {'conf': float(data['confidence']),
+               'polarity': data['is_positive'],
+               'data_id': data_id}
+
 
 def get_content(content_id):
     if content_id.endswith('.b16.html'):
@@ -38,5 +39,5 @@ def get_content(content_id):
 
 
 #_build_index()
-server.run(list_classes=list_classes, list_feature_classifiers=list_feature_classifiers, get_confidence=get_confidence, port=8004,
+server.run(list_class_feature_classifiers=list_class_feature_classifiers, get_confidence=get_confidence, port=8004,
            get_content=get_content, conf_graphs=[graphs.GooglePRChart(), graphs.GoogleROCChart()])
